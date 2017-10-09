@@ -69,6 +69,7 @@ git clone https://github.com/raspberrypi/linux -b rpi-4.9.y
 
 mkdir -p /home/build/rootfs
 make ARCH=arm64 distclean
+#make ARCH=arm64 menuconfig
 
 (
   strace -f -q -y make ARCH=arm64 distclean 2>&1
