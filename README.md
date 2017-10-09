@@ -64,6 +64,9 @@ make ARCH=arm64 firmware_install INSTALL_MOD_PATH="/home/build/rootfs"
 
 ### build kernel (with strace)
 ```
+cd /home/build
+git clone https://github.com/raspberrypi/linux -b rpi-4.9.y
+
 mkdir -p /home/build/rootfs
 make ARCH=arm64 distclean
 
