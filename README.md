@@ -8,7 +8,7 @@ cd /root
 
 apt-get -y update && \
 apt-get -y upgrade && \
-apt-get -y install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip cmake build-essential pkg-config git libltdl7 qemu qemu-kvm
+apt-get -y install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip cmake build-essential pkg-config git libltdl7 qemu qemu-kvm libncurses5-dev strace
 
 wget https://download.docker.com/linux/ubuntu/dists/xenial/pool/stable/arm64/docker-ce_17.09.0~ce-0~ubuntu_arm64.deb && \
 dpkg -i docker-ce_17.09.0~ce-0~ubuntu_arm64.deb
@@ -50,4 +50,34 @@ moby build -pull -format kernel+initrd getty.yml
 ### back on your local workstation
 
 scp build@PACKET_HOST:/home/build/linuxkit/examples/getty-* .
+```
+
+### build kernel (no strace)
+```
+mkdir -p /home/build/rootfs
+make ARCH=arm64 distclean
+make ARCH=arm64 bcmrpi3_defconfig
+make ARCH=arm64 -j$(nproc)
+make ARCH=arm64 modules_install INSTALL_MOD_PATH="/home/build/rootfs"
+make ARCH=arm64 firmware_install INSTALL_MOD_PATH="/home/build/rootfs"
+```
+
+### build kernel (with strace)
+```
+mkdir -p /home/build/rootfs
+make ARCH=arm64 distclean
+
+(
+  strace -f -q -y make ARCH=arm64 distclean 2>&1
+  strace -f -q -y make ARCH=arm64 bcmrpi3_defconfig 2>&1
+  strace -f -q -y make ARCH=arm64 -j$(nproc) 2>&1
+) | grep -Po '\w+\(\d+<\/home\/build\/linux\/.+?>' | sort | uniq -c | sort -n > /home/build/build.kernel.uniq.sorted.log
+
+(
+  strace -f -q -y make ARCH=arm64 modules_install INSTALL_MOD_PATH="/mnt/piroot" 2>&1
+) | grep -Po '\w+\(\d+<\/home\/build\/linux\/.+?>' | sort | uniq -c | sort -n > /home/build/build.modules.uniq.sorted.log
+
+(
+  strace -f -q -y make ARCH=arm64 firmware_install INSTALL_MOD_PATH="/mnt/piroot" 2>&1
+) | grep -Po '\w+\(\d+<\/home\/build\/linux\/.+?>' | sort | uniq -c | sort -n > /home/build/build.firmware.uniq.sorted.log
 ```
